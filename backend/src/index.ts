@@ -1,6 +1,8 @@
 import express from "express";
 import cors from 'cors';
 import { error } from "node:console";
+import { runUserCode } from "./runner";
+import { stderr } from "node:process";
 
 const app = express();
 
@@ -17,11 +19,16 @@ app.post("/api/run",async(req,res)=>{
         return res.status(400).json({error:"code is  required"});
     }
 
-    res.json({
-        stdout:"",
-        tests:[],
-        aiFeedback:"Not implemented yet"
-    });
+    try {
+        const result = await runUserCode(code);
+
+        res.json({
+            stdout:result.stdout,
+            stderr:result.stderr
+        });
+    } catch (error) {
+        res.status(500).json({ error: "Execution failed" });   
+    }
 });
 
 app.listen(3001,()=>{
