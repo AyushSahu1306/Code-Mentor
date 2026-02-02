@@ -19,10 +19,25 @@ app.post("/api/run",async(req,res)=>{
         return res.status(400).json({error:"code is  required"});
     }
 
+    const tests = `
+function assertEqual(a,b,msg){
+  if(a!==b) throw new Error(msg + ": expected " + b + " got " + a);
+}
+
+assertEqual(sum([1,2,3]),6,"basic");
+assertEqual(sum([]),0,"empty");
+assertEqual(sum([-1,5]),4,"negative");
+
+console.log("ALL_TESTS_PASSED");
+`;
+
     try {
-        const result = await runUserCode(code);
+        const result = await runUserCode(code,tests);
+
+        const passed = result.stdout.includes("ALL_TESTS_PASSED");
 
         res.json({
+            passed,
             stdout:result.stdout,
             stderr:result.stderr
         });
