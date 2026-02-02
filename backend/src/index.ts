@@ -13,7 +13,23 @@ app.use("/health",(_req,res)=>{
     res.json({ok:true});
 });
 
-app.post("/api/run",async(req,res)=>{
+app.post("/api/chat", async (req, res) => {
+  const { message, code } = req.body;
+
+  if (!message) return res.status(400).json({ error: "message required" });
+
+  const explanation = await explainResult({
+    userCode: code || "",
+    stdout: "",
+    stderr: "",
+    passed: true, 
+  });
+
+  res.json({ response: explanation });
+});
+
+
+app.post("/api/practice",async(req,res)=>{
     const {code} = req.body;
     if(!code){
         return res.status(400).json({error:"code is  required"});
