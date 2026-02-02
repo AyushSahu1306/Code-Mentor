@@ -1,8 +1,8 @@
+import 'dotenv/config'
 import express from "express";
 import cors from 'cors';
-import { error } from "node:console";
 import { runUserCode } from "./runner";
-import { stderr } from "node:process";
+import { explainResult } from "./ai";
 
 const app = express();
 
@@ -36,13 +36,21 @@ console.log("ALL_TESTS_PASSED");
 
         const passed = result.stdout.includes("ALL_TESTS_PASSED");
 
+        const explanation = await explainResult({
+            userCode:code,
+            stdout:result.stdout,
+            stderr:result.stderr,
+            passed
+        })
+
         res.json({
             passed,
             stdout:result.stdout,
-            stderr:result.stderr
+            stderr:result.stderr,
+            explanation
         });
-    } catch (error) {
-        res.status(500).json({ error: "Execution failed" });   
+    } catch (error:any) {
+        res.status(500).json({ error: error.message});   
     }
 });
 
