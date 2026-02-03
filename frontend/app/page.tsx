@@ -9,30 +9,22 @@ export default function Home(){
   const [ai,setAi] = useState("");
   const [message,setMessage] = useState("");
 
-  async function runPractice() {
+  async function sendMessage() {
+  const res = await fetch("http://localhost:3001/api/message", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      message,
+      code
+    }),
+  });
 
-    const res = await fetch("http://localhost:3001/api/practice",{
-      method:"POST",
-      headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({code})
-    });
+  const data = await res.json();
 
-    const data = await res.json();
-    setOutput(data.stderr || data.stdout);
-    setAi(data.explanation);
-  }
+  setOutput(data.stderr || data.stdout || "");
+  setAi(data.explanation || data.response || "");
+}
 
-
-  async function sendChat() {
-     const res = await fetch("http://localhost:3001/api/chat", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message, code }),
-    });
-
-    const data = await res.json();
-    setAi(data.response);
-  }
 
   return (
     <main className="p-4 grid grid-cols-2 gap-4 h-screen">
@@ -45,9 +37,13 @@ export default function Home(){
           onChange={(v)=>setCode(v || "")}
         />
 
-        <button onClick={runPractice} className="bg-blue-600 text-white p-2 mt-2">
-          Run Practice
+        <button
+          onClick={sendMessage}
+          className="bg-blue-600 text-white p-2 mt-2"
+        >
+          Send
         </button>
+
 
         <pre className="bg-black text-green-400 p-2 mt-2 h-40 overflow-auto">
           {output}
@@ -62,9 +58,13 @@ export default function Home(){
           className="border p-2 h-24"
         />
 
-        <button onClick={sendChat} className="bg-green-600 text-white p-2 mt-2">
-          Send chat
+        <button
+          onClick={sendMessage}
+          className="bg-blue-600 text-white p-2 mt-2"
+        >
+          Send
         </button>
+
 
         <div className="border p-2 mt-2 flex-1 overflow-auto whitespace-pre-wrap">
           {ai}
