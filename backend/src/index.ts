@@ -4,6 +4,7 @@ import cors from 'cors';
 import { runUserCode } from "./runner";
 import { explainResult } from "./ai";
 import { detectIntent } from './intent';
+import { getSession } from './session';
 
 const app = express();
 
@@ -15,9 +16,20 @@ app.use("/health",(_req,res)=>{
 });
 
 app.post("/api/message",async(req,res)=>{
-    const {message,code} = req.body;
+    const {sessionId,message,code} = req.body;
+
+    if (!sessionId) return res.status(400).json({ error: "sessionId required" });
+
+    const session = getSession(sessionId);
 
     if(!message) return res.status(400).json({error:"message required"});
+
+    session.messages.push({
+        role:"user",
+        content:message
+    });
+
+    session.lastCode = code || "";
 
     const intent = await detectIntent(message);
 
@@ -44,11 +56,17 @@ app.post("/api/message",async(req,res)=>{
             const passed = result.stdout.includes("ALL_TESTS_PASSED");
 
             const explanation = await explainResult({
-                userCode:code,
+                messages:session.messages,
+                code,
                 stdout:result.stdout,
                 stderr:result.stderr,
                 passed
             })
+
+            session.messages.push({
+                role: "assistant",
+                content: explanation,
+            });
 
             res.json({
                 passed,
@@ -63,16 +81,24 @@ app.post("/api/message",async(req,res)=>{
 
     else {
 
-        if (!message) return res.status(400).json({ error: "message required" });
-
-        const explanation = await explainResult({
-            userCode: code || "",
-            stdout: "",
-            stderr: "",
-            passed: true, 
-        });
-
-        res.json({ response: explanation });
+       try {
+         if (!message) return res.status(400).json({ error: "message required" });
+ 
+         const explanation = await explainResult({
+             messages:session.messages,
+             code:session.lastCode || "",
+             stdout: "",
+             stderr: "",
+             passed: true, 
+         });
+         session.messages.push({
+             role:"assistant",
+             content:explanation,
+         })
+         res.json({ response: explanation });
+       } catch (error:any) {
+            return res.status(500).json({ error: error.message });
+       }
     }
 })
 

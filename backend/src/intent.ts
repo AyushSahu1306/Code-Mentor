@@ -25,7 +25,6 @@ export async function detectIntent(message: string): Promise<"tutor" | "practice
     }),
   });
   const result = await res.json();
-  console.log(result);
   const text = result.choices[0].message.content.trim().toLowerCase();
 
   return text === "practice" ? "practice" : "tutor";

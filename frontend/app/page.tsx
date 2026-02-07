@@ -2,18 +2,21 @@
 
 import { Editor } from "@monaco-editor/react";
 import { useState } from "react";
+import { v4 as uuid } from "uuid";
 
 export default function Home(){
   const [code,setCode] = useState(`function sum(arr){\n return 0;\n}`);
   const [output,setOutput] = useState("");
   const [ai,setAi] = useState("");
   const [message,setMessage] = useState("");
+  const [sessionId] = useState(()=>crypto.randomUUID()); 
 
   async function sendMessage() {
   const res = await fetch("http://localhost:3001/api/message", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
+      sessionId,
       message,
       code
     }),

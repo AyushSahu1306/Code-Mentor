@@ -1,35 +1,40 @@
 const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
 
+type ChatMessage = {
+    role:"user"|"assistant";
+    content:string;
+}
+
+
 type ExplainParams = {
-    userCode : string;
+    messages:ChatMessage[];
+    code:string;
     stdout : string;
     stderr : string;
     passed : boolean;
 };
 
 export async function explainResult({
-    userCode,stdout,stderr,passed
+    messages,code,stdout,stderr,passed
 }:ExplainParams):Promise<string> {
-    const prompt = `
-    You are a strict but helpful programming tutor.
 
-    Student code:
-    ${userCode}
+   const finalUserMessage = `
+        Current editor code:
 
-    Execution stdout:
-    ${stdout}
+        ${code || "(empty)"}
 
-    Execution stderr:
-    ${stderr}
+        Execution stdout:
+        ${stdout || "(none)"}
 
-    Tests passed: ${passed}
+        Execution stderr:
+        ${stderr || "(none)"}
 
-    Rules:
-    - If failed: explain what went wrong and how to fix it.
-    - If passed: briefly confirm and optionally suggest improvement.
-    - Do NOT rewrite full solution unless necessary.
-    - Focus on reasoning and mistakes.
-    `;
+        Tests passed: ${passed}
+
+        Explain clearly:
+        - If failed: what went wrong and how to fix it.
+        - If passed: confirm briefly and suggest improvement.
+        `;
 
     const response = await fetch(OPENROUTER_URL,{
         method:"POST",
@@ -46,9 +51,10 @@ export async function explainResult({
                     role:"system",
                     content:"You are an experienced software engineering tutor.",
                 },
+                ...messages,
                 {
                     role:"user",
-                    content:prompt,
+                    content:finalUserMessage,
                 },
             ],
         }),
